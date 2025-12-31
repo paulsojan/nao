@@ -11,6 +11,7 @@ import {
 	ConversationScrollButton,
 } from '@/components/ai-elements/conversation';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from '@/components/ui/input-group';
+import { useSession } from '@/lib/auth-client';
 
 export const Route = createFileRoute('/')({
 	component: App,
@@ -48,6 +49,7 @@ function getFakeWeather(city: string): WeatherData {
 
 function App() {
 	const [input, setInput] = useState('');
+	const { data: session } = useSession();
 
 	const { messages, sendMessage, status, addToolOutput } = useChat({
 		transport: new DefaultChatTransport({ api: '/api/chat' }),
@@ -82,7 +84,7 @@ function App() {
 					{messages.length === 0 ? (
 						<ConversationEmptyState
 							icon={<BotIcon className='size-8' />}
-							title='Welcome!'
+							title={`Welcome${session?.user ? `, ${session.user.name}` : ''} !`}
 							description='Ask me about the weather in any city'
 						/>
 					) : (
