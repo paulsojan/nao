@@ -1,6 +1,9 @@
 """Database syncing functionality for generating markdown documentation from database schemas."""
 
+import shutil
+from collections import defaultdict
 from pathlib import Path
+from typing import Dict, List
 
 from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
@@ -451,3 +454,58 @@ def sync_databases(databases: list, base_path: Path) -> tuple[int, int]:
                 console.print(f"[bold red]✗[/bold red] Failed to sync {db.name}: {e}")
 
     return total_datasets, total_tables
+
+
+def remove_unused_databases(databases: List, db_root: Path):
+    """Remove databases that are not present in the config file."""
+
+    valid_db_folders_by_type: Dict[str, set] = defaultdict(set)
+
+    for db in databases:
+        type_folder = f"type={db.type}"
+        db_identifier = get_database_identifier(db)
+        db_folder = f"database={db_identifier}"
+
+        valid_db_folders_by_type[type_folder].add(db_folder)
+
+    for type_dir in db_root.iterdir():
+        if not type_dir.is_dir():
+            continue
+
+        type_folder_name = type_dir.name
+
+        # Remove entire type directory if it doesn't exist in nao_config
+        if type_folder_name not in valid_db_folders_by_type:
+            shutil.rmtree(type_dir)
+            console.print(f"[yellow]🗑 Removed unused database type:[/yellow] {type_dir}")
+            continue
+
+        valid_db_folders = valid_db_folders_by_type[type_folder_name]
+
+        # Remove unused database folders if it doesn't exist in nao_config
+        for db_dir in type_dir.iterdir():
+            if not db_dir.is_dir():
+                continue
+
+            if db_dir.name not in valid_db_folders:
+                shutil.rmtree(db_dir)
+                console.print(f"[yellow]🗑 Removed unused database:[/yellow] {type_folder_name}/{db_dir.name}")
+
+
+def get_database_identifier(db):
+    if db.type == "bigquery":
+        return db.project_id
+
+    elif db.type == "duckdb":
+        if db.path == ":memory:":
+            return "memory"
+        return Path(db.path).stem
+
+    elif db.type == "databricks":
+        return db.catalog or "main"
+
+    elif db.type == "snowflake":
+        return db.database
+
+    elif db.type == "postgres":
+        return db.database

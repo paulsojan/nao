@@ -1,5 +1,6 @@
 """Repository syncing functionality for cloning and pulling git repositories."""
 
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -101,3 +102,12 @@ def sync_repositories(repos: list[RepoConfig], base_path: Path) -> int:
             console.print(f"  [green]✓[/green] {repo.name}")
 
     return success_count
+
+
+def remove_unused_repos(config_repos: list[RepoConfig], base_path: Path) -> None:
+    """Remove repositories that are not present in the config file."""
+    repo_names = {repo.name for repo in config_repos}
+    for repo_dir in base_path.iterdir():
+        if repo_dir.is_dir() and repo_dir.name not in repo_names:
+            shutil.rmtree(repo_dir)
+            console.print(f"  [yellow]🗑 Removed unused repo:[/yellow] {repo_dir.name}")

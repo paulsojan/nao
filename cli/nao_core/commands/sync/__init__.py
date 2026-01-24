@@ -7,8 +7,8 @@ from rich.console import Console
 
 from nao_core.config import NaoConfig
 
-from .databases import sync_databases
-from .repositories import sync_repositories
+from .databases import remove_unused_databases, sync_databases
+from .repositories import remove_unused_repos, sync_repositories
 
 console = Console()
 
@@ -35,11 +35,15 @@ def sync(output_dir: str = "databases", repos_dir: str = "repos"):
     console.print(f"[dim]Project:[/dim] {config.project_name}")
 
     repos_synced = 0
+    repos_path = Path(repos_dir)
+
+    remove_unused_repos(config.repos, repos_path)
+
     if config.repos:
-        repos_path = Path(repos_dir)
         repos_synced = sync_repositories(config.repos, repos_path)
 
     db_path = Path(output_dir)
+    remove_unused_databases(config.databases, db_path)
     datasets_synced, tables_synced = sync_databases(config.databases, db_path)
 
     console.print("\n[bold green]✓ Sync Complete[/bold green]\n")
