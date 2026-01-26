@@ -8,7 +8,9 @@ from nao_core.commands.sync.cleanup import (
     DatabaseSyncState,
     cleanup_stale_databases,
     cleanup_stale_paths,
+    cleanup_stale_repos,
 )
+from nao_core.config.repos import RepoConfig
 
 
 @dataclass
@@ -17,6 +19,15 @@ class DBConfig:
     project_id: str | None = None
     path: str | None = None
     database: str | None = None
+
+    def get_database_name(self) -> str:
+        """Extract database name from path or return database attribute."""
+        if self.path:
+            # Extract filename without extension from path
+            return Path(self.path).stem
+        if self.database:
+            return self.database
+        raise ValueError("DBConfig must have either path or database")
 
 
 class TestDatabaseSyncState:
@@ -253,3 +264,31 @@ class TestCleanupStaleDatabases:
 
         assert (tmp_path / "type=duckdb" / "database=valid").exists()
         assert not (tmp_path / "type=duckdb" / "database=old").exists()
+
+
+class TestCleanupStaleRespositories:
+    def test_remove_unused_repos(self, tmp_path: Path):
+        base_path = tmp_path / "repos"
+        base_path.mkdir()
+
+        create_repo_dir(base_path, "repo1")
+        create_repo_dir(base_path, "repo2")
+        create_repo_dir(base_path, "old_repo")
+
+        config_repos = [
+            RepoConfig(name="repo1", url="https://example.com/repo1.git"),
+            RepoConfig(name="repo2", url="https://example.com/repo2.git"),
+        ]
+
+        cleanup_stale_repos(config_repos, base_path)
+
+        remaining = {p.name for p in base_path.iterdir() if p.is_dir()}
+        assert remaining == {"repo1", "repo2"}
+        assert not (base_path / "old_repo").exists()
+
+
+def create_repo_dir(base: Path, name: str) -> Path:
+    repo = base / name
+    repo.mkdir(parents=True)
+    (repo / "README.md").write_text("dummy")
+    return repo
