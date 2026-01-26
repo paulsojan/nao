@@ -21,9 +21,7 @@ class DBConfig:
     database: str | None = None
 
     def get_database_name(self) -> str:
-        """Extract database name from path or return database attribute."""
         if self.path:
-            # Extract filename without extension from path
             return Path(self.path).stem
         if self.database:
             return self.database
