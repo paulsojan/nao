@@ -1,8 +1,8 @@
-import * as yup from 'yup';
+import * as z from 'zod';
 
-export const USER_VALIDATION_SCHEMA = yup.object({
-	name: yup.string().required('Name is required').min(2, 'Name must be at least 2 characters'),
-	email: yup.string().required('Email is required').email('Enter a valid email address'),
+export const USER_VALIDATION_SCHEMA = z.object({
+	name: z.string().min(2, 'Name must be at least 2 characters'),
+	email: z.email('Invalid email address'),
 });
 
 export const USER_FORM_INITIAL_VALUES = {

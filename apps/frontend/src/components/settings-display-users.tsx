@@ -61,14 +61,15 @@ export function UsersList({ isAdmin, onModifyUser }: UsersListProps) {
 					</TableBody>
 				</Table>
 			)}
-
-			<CreateUser
-				open={isCreateUserOpen}
-				onOpenChange={setIsCreateUserOpen}
-				onUserCreated={(email, password) => {
-					setNewUser({ email, password });
-				}}
-			/>
+			{isCreateUserOpen && (
+				<CreateUser
+					open={isCreateUserOpen}
+					onOpenChange={setIsCreateUserOpen}
+					onUserCreated={(email, password) => {
+						setNewUser({ email, password });
+					}}
+				/>
+			)}
 			<NewlyCreatedUserDialog
 				open={!!newUser}
 				onOpenChange={(open) => !open && setNewUser(null)}
